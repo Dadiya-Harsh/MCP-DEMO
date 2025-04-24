@@ -2,11 +2,13 @@ import json
 from groq import Groq
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # Initialize Groq client
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 model = "llama-3.3-70b-versatile"
+
 
 # Define weather tools
 
@@ -24,15 +26,18 @@ def get_temperature(location: str):
     temperatures = {"New York": "22°C", "London": "18°C", "Tokyo": "26°C", "Sydney": "20°C"}
     return temperatures.get(location, "Temperature data not available")
 
+
 def get_weather_condition(location: str):
     # This is a mock tool/function. In a real scenario, you would call a weather API.
     conditions = {"New York": "Sunny", "London": "Rainy", "Tokyo": "Cloudy", "Sydney": "Clear"}
     return conditions.get(location, "Weather condition data not available")
 
+
 # Define system messages and tools
 messages = [
-    {"role": "system", "content": "You are a helpful assistant and sove my every query."},
-    {"role": "user", "content": "What's the weather and temperature like in New York and London? Respond with one sentence for each city. Use tools to get the information and what is 10 * 4 + 5. and also tell me which tools are used for every query "},
+    {"role": "system", "content": "You are a helpful assistant and solve my every query."},
+    {"role": "user",
+     "content": "What's the weather and temperature like in New York and London? Respond with one sentence for each city. Use tools to get the information and what is 10 * 4 + 5. and also tell me which tools are used for every query "},
 ]
 
 tools = [
@@ -71,22 +76,22 @@ tools = [
         },
     },
     {
-            "type": "function",
-            "function": {
-                "name": "calculate",
-                "description": "Evaluate a mathematical expression",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "expression": {
-                            "type": "string",
-                            "description": "The mathematical expression to evaluate",
-                        }
-                    },
-                    "required": ["expression"],
+        "type": "function",
+        "function": {
+            "name": "calculate",
+            "description": "Evaluate a mathematical expression",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "expression": {
+                        "type": "string",
+                        "description": "The mathematical expression to evaluate",
+                    }
                 },
-            }
+                "required": ["expression"],
+            },
         }
+    }
 ]
 
 # Make the initial request

@@ -8,7 +8,7 @@ nest_asyncio.apply()
 async def main():
     server_params = StdioServerParameters(
         command="python",
-        args=["simple_server.py"]
+        args=["server_stdio.py"]
     )
 
     async with stdio_client(server_params) as (read_stream, write_stream):

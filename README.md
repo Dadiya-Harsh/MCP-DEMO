@@ -15,7 +15,7 @@ This project serves as a learning resource for the Modular Computation Protocol 
     - [`client_sse.py`](learning/simple/client_sse.py): MCP client example using SSE transport.
   - `groq/`: Examples using the Groq LLM.
     - [`server.py`](learning/groq/server.py): MCP server example using Groq (currently empty).
-    - [`client.py`](learning/groq/client.py): MCP client example using Groq (imports only).
+    - [`client.py`](learning/groq/simple_async_groq_client.py): MCP client example using Groq (imports only).
 - [`pyproject.toml`](pyproject.toml): Project configuration file (Poetry).
 - `.gitignore`: Specifies intentionally untracked files that Git should ignore.
 - [`LICENSE`](LICENSE): License information (MIT License).

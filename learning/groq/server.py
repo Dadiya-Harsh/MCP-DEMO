@@ -1,12 +1,19 @@
+import psycopg2
+from psycopg2.extras import RealDictCursor
 import json
 import os
 from mcp.server.fastmcp import FastMCP
 import nest_asyncio
+from dotenv import load_dotenv
+
+load_dotenv()
+
 nest_asyncio.apply()
-server = FastMCP(name = "LLM-Server", host = "0.0.0.0", port = 8050)
+
+mcp = FastMCP(name = "LLM-Server", host = "0.0.0.0", port = 8050)
 
 
-@server.tool()
+@mcp.tool()
 def knowledge_base() -> str:
     """Retrieve the entire knowledge base as a formatted string.
 
@@ -42,6 +49,29 @@ def knowledge_base() -> str:
         return "Error: Invalid JSON in knowledge base file"
     except Exception as e:
         return f"Error: {str(e)}"
-    
+
+@mcp.tool()
+def database_connection(database_url: str = os.getenv("DATABASE_URL")) -> str:
+    """ Sets up the database connection and retrieve answer from the database.
+    Args:
+        database_url: it is connection string which helps us to connect with the database..
+    """
+    try:
+        conn = psycopg2.connect(database_url,cursor_factory = RealDictCursor)
+        print("Connected to the database...")
+        cursor = conn.cursor()
+        cursor.close()
+    except Exception as e:
+        print(f"Error connecting to the database: {e}")
+        return "Error connecting to the database"
+    return "Toll is used.."
+
 if __name__ == "__main__":
-    server.run(transport="stdio")
+    if os.getenv("TRANSPORT") == "stdio":
+        print("Running server with stdio transport")
+        mcp.run(transport="stdio")
+    elif os.getenv("TRANSPORT") == "sse":
+        print("Running server with sse transport")
+        mcp.run(transport="sse")
+    # mcp.run(transport="stdio")
+    # mcp.run(transport="sse")

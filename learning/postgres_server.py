@@ -11,7 +11,7 @@ load_dotenv()
 # Initialize FastMCP server
 mcp = FastMCP(
     name="postgres_server",
-    port=5000,
+    port=8001,
     host="localhost",
     description="Access PostgresSQL databases by name and perform SQL operations"
 )
@@ -266,4 +266,4 @@ def close_connection(db_name):
 
 if __name__ == "__main__":
     print(f"Starting MCP PostgresSQL server on http://localhost:5000")
-    mcp.run(transport="stdio")
+    mcp.run(transport="sse")

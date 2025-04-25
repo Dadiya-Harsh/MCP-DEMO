@@ -21,7 +21,7 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB limit for file operations
 mcp = FastMCP(
     name="folder_server",
     host="localhost",
-    port=8002,
+    port=8003,
     log_level="INFO",
 )
 

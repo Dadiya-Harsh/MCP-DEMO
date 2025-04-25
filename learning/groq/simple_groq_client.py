@@ -1,4 +1,5 @@
 import json
+from typing import Any, Dict, List, Optional
 
 from groq import Groq
 import os
@@ -21,6 +22,7 @@ class SimpleGroqClient:
         """
         self.stdio = None
         self.groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        self.model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
         self.session: Optional[ClientSession] = None
         self.exit_stack = AsyncExitStack()
         self.stdio: Optional[Any] = None
@@ -55,85 +57,85 @@ class SimpleGroqClient:
         tools = response.tools
         print("\nConnected to server with tools:", [tool.name for tool in tools])
 
-    async def process_query(self, query: str) -> str:
-        """Process a query using Groq API and available tools"""
-        messages = [
+    async def get_mcp_tools(self) -> List[Dict[str, Any]]:
+        """Get available tools from the MCP server in groq format.
+
+        Returns:
+            A list of tools in groq format.
+        """
+        tools_result = await self.session.list_tools()
+        return [
             {
-                "role": "user",
-                "content": query
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": tool.inputSchema,
+                },
             }
+            for tool in tools_result.tools
         ]
 
-        # Initialize Groq client (assuming it's set up in self.groq)
-        response = await self.session.list_tools()
-        available_tools = [{
-            "type": "function",
-            "function": {
-                "name": tool.name,
-                "description": tool.description,
-                "parameters": tool.inputSchema
-            }
-        } for tool in response.tools]
+    async def process_query(self, query: str) -> str:
+        """Process a query using groq and available MCP tools.
 
-        # Initial Groq API call
+        Args:
+            query: The user query.
+
+        Returns:
+            The response from groq.
+        """
+        # Get available tools
+        tools = await self.get_mcp_tools()
+
+        # Initial groq API call
         response = self.groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=messages,
-            tools=available_tools,
-            max_tokens=1000
+            model=self.model,
+            messages=[{"role": "user", "content": query}],
+            tools=tools,
+            tool_choice="auto",
         )
 
-        # Process response and handle tool calls
-        final_text = []
-        assistant_message_content = []
+        # Get assistant's response
+        assistant_message = response.choices[0].message
 
-        # Groq API returns choices with message content
-        message = response.choices[0].message
+        # Initialize conversation with user query and assistant response
+        messages = [
+            {"role": "user", "content": query},
+            assistant_message,
+        ]
 
-        if message.content:
-            final_text.append(message.content)
-            assistant_message_content.append({"type": "text", "text": message.content})
-
-        # Handle tool calls
-        if hasattr(message, 'tool_calls') and message.tool_calls:
-            for tool_call in message.tool_calls:
-                tool_name = tool_call.function.name
-                tool_args = json.loads(tool_call.function.arguments)
-
+        # Handle tool calls if present
+        if assistant_message.tool_calls:
+            # Process each tool call
+            for tool_call in assistant_message.tool_calls:
                 # Execute tool call
-                result = await self.session.call_tool(tool_name, tool_args)
-                final_text.append(f"[Calling tool {tool_name} with args {tool_args}]")
-
-                assistant_message_content.append({
-                    "type": "tool_use",
-                    "id": tool_call.id,
-                    "name": tool_name,
-                    "input": tool_args
-                })
-
-                messages.append({
-                    "role": "assistant",
-                    "content": assistant_message_content
-                })
-                messages.append({
-                    "role": "tool",
-                    "content": json.dumps({
-                        "tool_call_id": tool_call.id,
-                        "result": result.content
-                    })
-                })
-
-                # Get next response from Groq
-                response = self.groq_client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=messages,
-                    tools=available_tools,
-                    max_tokens=1000
+                result = await self.session.call_tool(
+                    tool_call.function.name,
+                    arguments=json.loads(tool_call.function.arguments),
                 )
 
-                final_text.append(response.choices[0].message.content)
+                # Add tool response to conversation
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": result.content[0].text,
+                    }
+                )
 
-        return "\n".join(final_text)
+            # Get final response from groq with tool results
+            final_response = self.groq_client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                tools=tools,
+                tool_choice="none",  # Don't allow more tool calls
+            )
+
+            return final_response.choices[0].message.content
+
+        # No tool calls, just return the direct response
+        return assistant_message.content
 
     async def chat_loop(self):
         """Run an interactive chat loop"""

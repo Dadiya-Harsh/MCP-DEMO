@@ -11,6 +11,7 @@ from mcp.client.stdio import stdio_client
 # from openai import AsyncOpenAI
 from groq import AsyncGroq
 
+from mcp.client.session import ClientSession
 # Apply nest_asyncio to allow nested event loops (needed for Jupyter/IPython)
 nest_asyncio.apply()
 

@@ -1,36 +1,67 @@
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
+from mcp.types import TextContent
 from tavily import TavilyClient
 import os
 from dotenv import load_dotenv
+import json
 
 load_dotenv()
 
-mcp = FastMCP(name = "Web Search", host = "localhost", port = 8000)
+mcp = FastMCP(
+    name="web_search_server",
+    host="localhost",
+    port=8000,
+    log_level="INFO",
+)
 
-
-@mcp.tool()
-async def web_search(query: str) -> dict:
-    """Perform a web search using the Tavily API.
+@mcp.tool(
+    name="web_search",
+    description="Perform a web search using the Tavily API."
+)
+async def web_search(query: str, ctx: Context) -> list[TextContent]:
+    """
+    Perform a web search using the Tavily API.
 
     Args:
         query: The search query string.
+        ctx: Context for logging and progress reporting.
 
     Returns:
-        A list of URLs from the search results.
+        List[TextContent]: JSON-encoded search results.
     """
-    # Simulate a web search using Tavily API
-    # In a real implementation, you would make an HTTP request to the Tavily API
-    # and parse the response to extract URLs.
-    # await asyncio.sleep(1)
-    tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+    await ctx.info(f"Performing web search for query: {query}")
+    try:
+        tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+        await ctx.report_progress(50, 100)
+        response = tavily_client.search(query)
+        await ctx.report_progress(100, 100)
 
-    response = tavily_client.search(query)
-    for result in response['results']:
-        print(result['title'])
-        print(result['content'])
+        # Format results as JSON
+        results = [
+            {
+                "title": result["title"],
+                "url": result["url"],
+                "content": result["content"]
+            } for result in response["results"]
+        ]
 
-    return response
+        return [TextContent(
+            type="text",
+            text=json.dumps({
+                "status": "success",
+                "query": query,
+                "results": results
+            })
+        )]
+    except Exception as e:
+        await ctx.error(f"Error performing web search: {str(e)}")
+        return [TextContent(
+            type="text",
+            text=json.dumps({
+                "status": "error",
+                "message": str(e)
+            })
+        )]
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
- 
+    mcp.run(transport="sse")

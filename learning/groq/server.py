@@ -1,5 +1,3 @@
-import psycopg2
-from psycopg2.extras import RealDictCursor
 import json
 import os
 from mcp.server.fastmcp import FastMCP
@@ -50,21 +48,7 @@ def knowledge_base() -> str:
     except Exception as e:
         return f"Error: {str(e)}"
 
-@mcp.tool()
-def database_connection(database_url: str = os.getenv("DATABASE_URL")) -> str:
-    """ Sets up the database connection and retrieve answer from the database.
-    Args:
-        database_url: it is connection string which helps us to connect with the database..
-    """
-    try:
-        conn = psycopg2.connect(database_url,cursor_factory = RealDictCursor)
-        print("Connected to the database...")
-        cursor = conn.cursor()
-        cursor.close()
-    except Exception as e:
-        print(f"Error connecting to the database: {e}")
-        return "Error connecting to the database"
-    return "Toll is used.."
+
 
 if __name__ == "__main__":
     if os.getenv("TRANSPORT") == "stdio":

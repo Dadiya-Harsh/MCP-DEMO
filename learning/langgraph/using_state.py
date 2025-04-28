@@ -1,6 +1,18 @@
 from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
 
+"""
+This example demonstrates how to use the StateGraph class to create a stateful graph.
+The graph consists of three nodes, each representing a function that processes the state in some way.
+The state is represented as a dictionary, and each node can read from and write to the state.
+The graph is compiled and invoked with an initial state, and the final output is printed.   
+
+
+State can have multiple Schemas, and the graph can be used to transform the state from one schema to another.
+Nodes does the computation and can read from and write to the state.
+
+"""
+
 class InputState(TypedDict):
     user_input: str
 
@@ -37,5 +49,8 @@ builder.add_edge("node_2", "node_3")
 builder.add_edge("node_3", END)
 
 graph = builder.compile()
-graph.invoke({"user_input":"Hello"})
+graph.invoke({"user_input":"My"})
 {'graph_output': 'My name is Lance'}
+
+graph.invoke({"user_input":"Hello"})
+{'graph_output': 'Hello name is Lance'}

@@ -23,12 +23,14 @@ Start here to understand the basics:
 - [`client_stdio.py`](learning/simple/client_stdio.py): Corresponding stdio client
 - [`server_sse.py`](learning/simple/server_sse.py): MCP server using SSE transport
 - [`client_sse.py`](learning/simple/client_sse.py): SSE client implementation
+- [README](learning/simple/README.md): More details about the Simple Examples
 
 ### 2. Groq Integration (`learning/groq/`)
 Exploring MCP with Groq's LLM:
 - Server implementation for knowledge base access
 - Various client implementations (async, SSE, simple)
 - Example of tool usage and LLM interactions
+- [README](learning/groq/README.md): More details about the Groq Integration
 
 ### 3. Servers (`learning/Servers/`)
 Different server implementations:
@@ -36,12 +38,14 @@ Different server implementations:
 - Web search server using Tavily
 - File system server
 - Async implementations
+- [README](learning/Servers/README.md): More details about the Server Implementations
 
 ### 4. Clients (`learning/Clients/`)
 Advanced client implementations:
 - Multi-server client
 - Agent implementations
 - Async patterns
+- [README](learning/Clients/README.md): More details about the Client Implementations
 
 ### 5. Asynchronous Python (`learning/asyncoronus python/`)
 Learning async programming with Python:

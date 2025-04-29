@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="markdown-body">
+    <h1>{{ current_module | capitalize }} Module</h1>
+    {{ content | safe }}
+    <h2>Scripts</h2>
+    {% if scripts %}
+    <ul>
+        {% for script in scripts %}
+        <li class="mb-2">
+            {{ script }}
+            <button onclick="runScript('{{ current_module }}', '{{ script }}')" class="ml-4 bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600">Run</button>
+            <div id="output-{{ script | replace('.', '-') }}" class="mt-2 p-4 bg-gray-100 rounded hidden"></div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No scripts found in this module.</p>
+    {% endif %}
+</div>
+<script>
+async function runScript(moduleName, scriptName) {
+    const outputDiv = document.getElementById(`output-${scriptName.replace('.', '-')}`);
+    outputDiv.innerHTML = 'Running...';
+    outputDiv.classList.remove('hidden');
+    try {
+        const response = await fetch('/run_script', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `module_name=${moduleName}&script_name=${scriptName}`
+        });
+        const result = await response.json();
+        if (result.error) {
+            outputDiv.innerHTML = `<pre class="text-red-600">${result.error}</pre>`;
+        } else {
+            outputDiv.innerHTML = `<pre>${result.output || 'No output.'}${result.error ? '\nErrors:\n' + result.error : ''}</pre>`;
+        }
+    } catch (error) {
+        outputDiv.innerHTML = `<pre class="text-red-600">Error: ${error.message}</pre>`;
+    }
+}
+</script>
+{% endblock %}

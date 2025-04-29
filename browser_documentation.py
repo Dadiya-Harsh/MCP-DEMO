@@ -3,19 +3,21 @@ import sys
 import subprocess
 import webbrowser
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, flash, redirect, url_for
+from dotenv import load_dotenv, set_key
 import markdown
-from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
+app.secret_key = os.urandom(24)  # Required for flash messages
 
 # Define base directory
 BASE_DIR = Path(__file__).parent
 LEARNING_DIR = BASE_DIR / "learning"
+ENV_FILE = BASE_DIR / ".env"
 
 # Define modules and their descriptions
 MODULES = {
@@ -29,6 +31,18 @@ MODULES = {
         "desc": "Async programming examples",
     },
 }
+
+# Define supported environment variables
+ENV_VARIABLES = [
+    "GROQ_API_KEY",
+    "GEMINI_API_KEY",
+    "TAVILY_API_KEY",
+    "DATABASE_URL",
+    "TRANSPORT",
+    "model_llm",
+    "DATABASE_URI",
+    "ALLOWED_BASE_PATH",
+]
 
 def read_markdown_file(file_path):
     """Read and convert Markdown file to HTML."""
@@ -100,7 +114,7 @@ def run_script():
             check=True,
             text=True,
             capture_output=True,
-            timeout=30  # Prevent hanging
+            timeout=30
         )
         output = result.stdout
         error = result.stderr if result.stderr else ""
@@ -111,6 +125,32 @@ def run_script():
         return jsonify({"error": "Script execution timed out."}), 500
     except Exception as e:
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+
+@app.route("/env", methods=["GET", "POST"])
+def env():
+    """Render and handle the environment variables form."""
+    if request.method == "POST":
+        try:
+            for var in ENV_VARIABLES:
+                value = request.form.get(var, "").strip()
+                set_key(ENV_FILE, var, value)
+            flash("Environment variables updated successfully!", "success")
+            # Reload environment variables
+            load_dotenv(override=True)
+        except Exception as e:
+            flash(f"Error updating environment variables: {str(e)}", "error")
+        return redirect(url_for("env"))
+    
+    # Load current values from .env, flag if set
+    env_values = {var: os.getenv(var, "") for var in ENV_VARIABLES}
+    env_set = {var: bool(os.getenv(var)) for var in ENV_VARIABLES}
+    return render_template(
+        "env.html",
+        modules=MODULES,
+        env_variables=ENV_VARIABLES,
+        env_values=env_values,
+        env_set=env_set
+    )
 
 if __name__ == "__main__":
     # Check dependencies

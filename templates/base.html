@@ -25,7 +25,8 @@
         <div class="w-64 bg-gray-800 text-white p-4">
             <h1 class="text-2xl font-bold mb-4">MCP-DEMO</h1>
             <nav>
-                <a href="/" class="block py-2 px-4 hover:bg-gray-700 rounded {% if not current_module %}bg-gray-700{% endif %}">Home</a>
+                <a href="/" class="block py-2 px-4 hover:bg-gray-700 rounded {% if not current_module and request.path != '/env' %}bg-gray-700{% endif %}">Home</a>
+                <a href="/env" class="block py-2 px-4 hover:bg-gray-700 rounded {% if request.path == '/env' %}bg-gray-700{% endif %}">Environment Variables</a>
                 {% for name, info in modules.items() %}
                 <a href="/module/{{ name }}" class="block py-2 px-4 hover:bg-gray-700 rounded {% if current_module == name %}bg-gray-700{% endif %}">{{ name }}</a>
                 {% endfor %}
@@ -33,6 +34,11 @@
         </div>
         <!-- Main Content -->
         <div class="flex-1 p-8 overflow-auto">
+            {% for message, category in get_flashed_messages(with_categories=true) %}
+            <div class="mb-4 p-4 rounded {% if category == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
             {% block content %}
             {% endblock %}
         </div>

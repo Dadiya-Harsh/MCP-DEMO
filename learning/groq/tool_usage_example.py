@@ -132,13 +132,13 @@ final_response = client.chat.completions.create(
 
 print(final_response.choices[0].message.content)
 
-"""
-Output:
-    (mcp-demo) PS E:\Projects\MCP\mcp-demo\learning\groq> uv run .\client.py
-        The weather in New York is sunny and the temperature is 22°C. The weather in London is rainy and the temperature is 18°C. The result of the mathematical expression 10 * 4 + 5 is 45.
+# """
+# Output:
+#     (mcp-demo) PS E:\Projects\MCP\mcp-demo\learning\groq> uv run .\client.py
+#         The weather in New York is sunny and the temperature is 22°C. The weather in London is rainy and the temperature is 18°C. The result of the mathematical expression 10 * 4 + 5 is 45.
 
-        The tools used for these queries are:
-        - get_weather_condition: to get the weather condition for a given location
-        - get_temperature: to get the temperature for a given location
-        - calculate: to evaluate a mathematical expression
-"""
+#         The tools used for these queries are:
+#         - get_weather_condition: to get the weather condition for a given location
+#         - get_temperature: to get the temperature for a given location
+#         - calculate: to evaluate a mathematical expression
+# """

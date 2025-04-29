@@ -9,8 +9,9 @@ from mcp import ClientSession, StdioServerParameters
 from langchain_core.messages import AIMessage, HumanMessage
 from mcp.client.sse import sse_client
 from mcp.types import Tool
+import logging
 
-
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -38,7 +39,7 @@ async def get_mcp_tools():
 
 
     # Using sse_client to connect to the server
-    async with sse_client("http://localhost:8050/sse") as (read_stream, write_stream):
+    async with sse_client("http://localhost:8000/sse") as (read_stream, write_stream):
         async with ClientSession(read_stream, write_stream) as session:
             # Initialize the connection
             await session.initialize()
@@ -104,7 +105,7 @@ async def react_agent_plan(state: ChatState) -> dict:
             }
         else:
             # Look up the tool by name
-            matching_tools = [t for t in state["available_tools"] if t["name"].lower() == action_part.lower()]
+            matching_tools = [t for t in state["available_tools"] if t.name.lower() == action_part.lower()]
             if matching_tools:
                 return {
                     "messages": state["messages"] + [AIMessage(content=response_text)],
@@ -189,18 +190,60 @@ async_graph.add_edge("react_agent_end", END)
 async_app = async_graph.compile()
 
 # Run the async graph
-async def main():
-    result = await async_app.ainvoke({
-        "messages": [HumanMessage(content="Write an example of a recursive function in Python")]
-    })
+# async def main():
+#     result = await async_app.ainvoke({
+#         "messages": [HumanMessage(content="Write an example of a recursive function in Python in new file and save it as example.py")]
+#     })
     
-    # Print the final conversation
-    for message in result["messages"]:
-        if isinstance(message, HumanMessage):
-            print(f"Human: {message.content}")
-        else:
-            print(f"AI: {message.content}")
+#     # Print the final conversation
+#     for message in result["messages"]:
+#         if isinstance(message, HumanMessage):
+#             print(f"Human: {message.content}")
+#         else:
+#             print(f"AI: {message.content}")
+
+async def process_query(query: str) -> str:
+    """
+    Process a query and return the response.
+    """
+    # Initialize the state
+    initial_state = {
+        "messages": [HumanMessage(content=query)],
+        "available_tools": [],
+        "current_tool": None,
+        "tool_result": ""
+    }
+
+    # Run the async graph with the initial state
+    result = await async_app.ainvoke(initial_state)
+
+    # Extract the final response from the result
+    final_response = result["messages"][-1].content if result["messages"] else "No response generated."
+    
+    return final_response
+
+async def chat_loop():
+        """
+        Run an interactive chat loop.
+        """
+        print("\nMulti-Server MCP Client Started!")
+        print("Type your queries or 'quit' to exit.")
+        print("Type 'servers' to list connected servers.")
+
+        while True:
+            try:
+                query = input("\nQuery: ").strip()
+
+                if query.lower() == 'quit':
+                    break
+
+                response = await process_query(query)
+                print("\n" + response)
+
+            except Exception as e:
+                logger.error(f"Error processing query: {str(e)}")
+                print(f"\nError: {str(e)}")
 
 # # Run the async main function
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(chat_loop())

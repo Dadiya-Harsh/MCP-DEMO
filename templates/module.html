@@ -9,7 +9,8 @@
         {% for script in scripts %}
         <li class="mb-2">
             {{ script }}
-            <button onclick="runScript('{{ current_module }}', '{{ script }}')" class="ml-4 bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600">Run</button>
+            <button id="run-{{ script | replace('.', '-') }}" onclick="runScript('{{ current_module }}', '{{ script }}')" class="ml-4 bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600">Run</button>
+            <button id="stop-{{ script | replace('.', '-') }}" onclick="stopScript('{{ script }}')" class="ml-2 bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 hidden">Stop</button>
             <div id="output-{{ script | replace('.', '-') }}" class="mt-2 p-4 bg-gray-100 rounded hidden"></div>
         </li>
         {% endfor %}
@@ -19,10 +20,24 @@
     {% endif %}
 </div>
 <script>
+let runningScript = null;
+
 async function runScript(moduleName, scriptName) {
+    if (runningScript) {
+        alert("Another script is already running. Please stop it first.");
+        return;
+    }
+
+    const runButton = document.getElementById(`run-${scriptName.replace('.', '-')}`);
+    const stopButton = document.getElementById(`stop-${scriptName.replace('.', '-')}`);
     const outputDiv = document.getElementById(`output-${scriptName.replace('.', '-')}`);
+
+    runningScript = scriptName;
+    runButton.classList.add('hidden');
+    stopButton.classList.remove('hidden');
     outputDiv.innerHTML = 'Running...';
     outputDiv.classList.remove('hidden');
+
     try {
         const response = await fetch('/run_script', {
             method: 'POST',
@@ -37,6 +52,31 @@ async function runScript(moduleName, scriptName) {
         }
     } catch (error) {
         outputDiv.innerHTML = `<pre class="text-red-600">Error: ${error.message}</pre>`;
+    } finally {
+        runButton.classList.remove('hidden');
+        stopButton.classList.add('hidden');
+        runningScript = null;
+    }
+}
+
+async function stopScript(scriptName) {
+    const runButton = document.getElementById(`run-${scriptName.replace('.', '-')}`);
+    const stopButton = document.getElementById(`stop-${scriptName.replace('.', '-')}`);
+    const outputDiv = document.getElementById(`output-${scriptName.replace('.', '-')}`);
+
+    try {
+        const response = await fetch('/stop_script', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        });
+        const result = await response.json();
+        outputDiv.innerHTML = `<pre>${result.message || result.error}</pre>`;
+    } catch (error) {
+        outputDiv.innerHTML = `<pre class="text-red-600">Error: ${error.message}</pre>`;
+    } finally {
+        runButton.classList.remove('hidden');
+        stopButton.classList.add('hidden');
+        runningScript = null;
     }
 }
 </script>

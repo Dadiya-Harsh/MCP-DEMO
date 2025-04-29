@@ -6,6 +6,7 @@ from pathlib import Path
 from flask import Flask, render_template, request, jsonify, flash, redirect, url_for
 from dotenv import load_dotenv, set_key
 import markdown
+import signal
 
 # Load environment variables
 load_dotenv()
@@ -43,6 +44,9 @@ ENV_VARIABLES = [
     "DATABASE_URI",
     "ALLOWED_BASE_PATH",
 ]
+
+# Global variable to track running process
+current_process = None
 
 def read_markdown_file(file_path):
     """Read and convert Markdown file to HTML."""
@@ -95,6 +99,7 @@ def module(module_name):
 @app.route("/run_script", methods=["POST"])
 def run_script():
     """Run a script and return its output."""
+    global current_process
     module_name = request.form.get("module_name")
     script_name = request.form.get("script_name")
     
@@ -108,23 +113,53 @@ def run_script():
         return jsonify({"error": f"Script '{script_name}' not found."}), 400
     
     try:
-        result = subprocess.run(
+        # If a process is already running, terminate it
+        if current_process is not None:
+            current_process.terminate()
+            current_process.wait(timeout=5)
+            current_process = None
+        
+        # Start the script as a subprocess
+        current_process = subprocess.Popen(
             [sys.executable, str(script_path)],
             cwd=module_info["path"],
-            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            capture_output=True,
-            timeout=30
+            bufsize=1,
+            universal_newlines=True
         )
-        output = result.stdout
-        error = result.stderr if result.stderr else ""
-        return jsonify({"output": output, "error": error})
-    except subprocess.CalledProcessError as e:
-        return jsonify({"output": e.stdout, "error": e.stderr}), 500
+        
+        # Read output and error streams
+        stdout, stderr = current_process.communicate(timeout=30)
+        current_process = None  # Reset process after completion
+        return jsonify({"output": stdout, "error": stderr})
     except subprocess.TimeoutExpired:
+        if current_process:
+            current_process.terminate()
+            current_process = None
         return jsonify({"error": "Script execution timed out."}), 500
     except Exception as e:
+        if current_process:
+            current_process.terminate()
+            current_process = None
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+
+@app.route("/stop_script", methods=["POST"])
+def stop_script():
+    """Stop the currently running script."""
+    global current_process
+    if current_process is not None:
+        try:
+            current_process.terminate()
+            current_process.send_signal(signal.SIGTERM)
+            current_process.wait(timeout=5)
+            current_process = None
+            return jsonify({"message": "Script stopped successfully."})
+        except Exception as e:
+            current_process = None
+            return jsonify({"error": f"Error stopping script: {str(e)}"}), 500
+    return jsonify({"message": "No script is currently running."})
 
 @app.route("/env", methods=["GET", "POST"])
 def env():

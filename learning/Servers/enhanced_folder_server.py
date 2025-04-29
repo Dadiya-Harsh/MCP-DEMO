@@ -25,7 +25,7 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB limit for file operations
 mcp = FastMCP(
     name="folder_server",
     host="localhost",
-    port=8003,
+    port=8004,
     log_level="INFO",
 )
 
@@ -920,4 +920,4 @@ def file_search_prompt() -> List[Dict]:
 if __name__ == "__main__":
     # Ensure the base path exists
     os.makedirs(ALLOWED_BASE_PATH, exist_ok=True)
-    mcp.run(transport="sse")  # Use SSE transport for HTTP compatibility
+    mcp.run(transport="stdio")  # Use SSE transport for HTTP compatibility

@@ -10,6 +10,9 @@ This directory contains examples that demonstrate the usage of LangGraph, a libr
 -   **[using_memory.py](learning/langgraph/using_memory.py)**: This example demonstrates how to incorporate memory into a LangGraph application. Memory allows the agent to retain information from previous interactions, enabling more context-aware and coherent conversations.
 -   **[using_state.py](learning/langgraph/using_state.py)**: This example focuses on managing state within a LangGraph. It shows how to define the state schema and how to update the state as the graph executes.
 -   **[react-template/](learning/langgraph/react-template/)**: A template for building ReAct agents with LangGraph. It includes the necessary files and configurations to get started quickly.
+```bash
+ langgraph new /your/path --template react-agent-python
+```
 
 ## Requirements
 

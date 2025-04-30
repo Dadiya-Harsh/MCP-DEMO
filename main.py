@@ -23,7 +23,7 @@ MODULES = {
     "asyncoronus python": {
         "path": LEARNING_DIR / "asyncoronus python",
         "desc": "Async programming examples",
-    },+
+    }
 }
 
 def display_welcome():

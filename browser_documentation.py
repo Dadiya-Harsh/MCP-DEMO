@@ -102,23 +102,23 @@ def run_script():
     global current_process
     module_name = request.form.get("module_name")
     script_name = request.form.get("script_name")
-    
+
     if module_name not in MODULES:
         return jsonify({"error": f"Module '{module_name}' not found."}), 400
-    
+
     module_info = MODULES[module_name]
     script_path = module_info["path"] / script_name
-    
+
     if not script_path.exists() or not script_path.is_file():
         return jsonify({"error": f"Script '{script_name}' not found."}), 400
-    
+
     try:
         # If a process is already running, terminate it
         if current_process is not None:
             current_process.terminate()
             current_process.wait(timeout=5)
             current_process = None
-        
+
         # Start the script as a subprocess
         current_process = subprocess.Popen(
             [sys.executable, str(script_path)],
@@ -129,7 +129,7 @@ def run_script():
             bufsize=1,
             universal_newlines=True
         )
-        
+
         # Read output and error streams
         stdout, stderr = current_process.communicate(timeout=30)
         current_process = None  # Reset process after completion
@@ -175,7 +175,7 @@ def env():
         except Exception as e:
             flash(f"Error updating environment variables: {str(e)}", "error")
         return redirect(url_for("env"))
-    
+
     # Load current values from .env, flag if set
     env_values = {var: os.getenv(var, "") for var in ENV_VARIABLES}
     env_set = {var: bool(os.getenv(var)) for var in ENV_VARIABLES}
@@ -196,13 +196,13 @@ if __name__ == "__main__":
     except ImportError:
         print("Error: Required dependencies missing. Please run 'uv pip install -r requirements.txt'.")
         sys.exit(1)
-    
+
     # Check virtual environment
     if not os.getenv("VIRTUAL_ENV"):
         print("Warning: Virtual environment not activated. Please activate it with 'source .venv/bin/activate'.")
-    
+
     # Open browser
     webbrowser.open("http://localhost:5000")
-    
+
     # Run Flask app
     app.run(debug=False, host="localhost", port=5000)

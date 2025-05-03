@@ -8,6 +8,7 @@ from dotenv import load_dotenv, set_key
 import markdown
 import signal
 import mimetypes
+import re
 
 # Load environment variables
 load_dotenv()
@@ -49,11 +50,18 @@ ENV_VARIABLES = [
 # Global variable to track running process
 current_process = None
 
-def read_markdown_file(file_path):
-    """Read and convert Markdown file to HTML."""
+def read_markdown_file(file_path, current_module=None):
+    """Read and convert Markdown file to HTML, rewriting .py links to the correct absolute path."""
     if file_path.exists():
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
+            # Rewrite .py links to include the full absolute path (e.g., server_stdio.py -> /learning/simple/server_stdio.py)
+            if current_module:
+                # Pattern to match markdown links like [text](server_stdio.py)
+                pattern = r'\[([^\]]*)\]\(([^)]+\.py)\)'
+                # Replace the link path with the absolute path (with leading /)
+                replacement = r'[\1](/learning/' + current_module + r'/\2)'
+                content = re.sub(pattern, replacement, content)
             return markdown.markdown(content, extensions=['fenced_code', 'tables'])
     return "<p>No documentation found.</p>"
 
@@ -88,7 +96,8 @@ def list_scripts(module_name):
 def home():
     """Render the home page with project overview."""
     readme_path = BASE_DIR / "README.md"
-    content = read_markdown_file(readme_path)
+    # For the root README, links are already in the correct format (learning/simple/server_stdio.py)
+    content = read_markdown_file(readme_path, current_module=None)
     return render_template(
         "index.html",
         content=content,
@@ -107,7 +116,7 @@ def module(module_name):
         ), 404
     module_info = MODULES[module_name]
     readme_path = module_info["path"] / "README.md"
-    content = read_markdown_file(readme_path)
+    content = read_markdown_file(readme_path, current_module=module_name)
     scripts = list_scripts(module_name)
     return render_template(
         "module.html",

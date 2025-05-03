@@ -33,6 +33,10 @@ MODULES = {
         "path": LEARNING_DIR / "asyncoronus python",
         "desc": "Async programming examples",
     },
+    "Ollama": {
+        "path": LEARNING_DIR / "ollama",
+        "desc": "Learning ollama"
+    }
 }
 
 # Define supported environment variables
@@ -149,13 +153,19 @@ def file_view(file_path):
                 message=error,
                 modules=MODULES
             ), 404
+        # Extract the module name from the file path (e.g., learning/simple/client_sse.py -> simple)
+        module_name = None
+        if "learning" in file_path:
+            path_parts = file_path.split('/')
+            if len(path_parts) >= 2:  # Ensure the path has at least learning/<module_name>
+                module_name = path_parts[1]  # e.g., 'simple' from 'learning/simple/client_sse.py'
         return render_template(
             "file_view.html",
             filename=full_path.name,
             content=content,
             file_type=file_type,
             modules=MODULES,
-            current_module=full_path.parent.parent.name if "learning" in file_path else None
+            current_module=module_name
         )
     except Exception as e:
         return render_template(

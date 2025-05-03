@@ -7,6 +7,7 @@ from flask import Flask, render_template, request, jsonify, flash, redirect, url
 from dotenv import load_dotenv, set_key
 import markdown
 import signal
+import mimetypes
 
 # Load environment variables
 load_dotenv()
@@ -56,12 +57,32 @@ def read_markdown_file(file_path):
             return markdown.markdown(content, extensions=['fenced_code', 'tables'])
     return "<p>No documentation found.</p>"
 
+def read_file_content(file_path):
+    """Read file content and determine its type."""
+    try:
+        if not file_path.exists():
+            return None, "File not found.", None
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        mime_type, _ = mimetypes.guess_type(file_path)
+        file_type = "text"
+        if mime_type:
+            if "python" in mime_type:
+                file_type = "python"
+            elif "markdown" in mime_type or file_path.suffix.lower() == ".md":
+                file_type = "markdown"
+                content = markdown.markdown(content, extensions=['fenced_code', 'tables'])
+        return content, file_type, None
+    except Exception as e:
+        return None, f"Error reading file: {str(e)}", None
+
 def list_scripts(module_name):
     """List Python scripts in a module directory."""
     module_info = MODULES.get(module_name)
     if not module_info:
         return []
-    return [f.name for f in module_info["path"].glob("*.py") if f.is_file()]
+    scripts = [f.name for f in module_info["path"].glob("*.py") if f.is_file()]
+    return scripts
 
 @app.route("/")
 def home():
@@ -83,7 +104,7 @@ def module(module_name):
             "error.html",
             message=f"Module '{module_name}' not found.",
             modules=MODULES
-        )
+        ), 404
     module_info = MODULES[module_name]
     readme_path = module_info["path"] / "README.md"
     content = read_markdown_file(readme_path)
@@ -95,6 +116,44 @@ def module(module_name):
         current_module=module_name,
         scripts=scripts
     )
+
+@app.route("/learning/<path:file_path>")
+def redirect_learning_to_file(file_path):
+    """Redirect /learning/... URLs to the /file/... route."""
+    return redirect(url_for('file_view', file_path=f'learning/{file_path}'))
+
+@app.route("/file/<path:file_path>")
+def file_view(file_path):
+    """Render the content of a file."""
+    full_path = (BASE_DIR / file_path).resolve()
+    try:
+        if not full_path.is_relative_to(BASE_DIR):
+            return render_template(
+                "error.html",
+                message="Access denied: Invalid file path.",
+                modules=MODULES
+            ), 403
+        content, file_type, error = read_file_content(full_path)
+        if error:
+            return render_template(
+                "error.html",
+                message=error,
+                modules=MODULES
+            ), 404
+        return render_template(
+            "file_view.html",
+            filename=full_path.name,
+            content=content,
+            file_type=file_type,
+            modules=MODULES,
+            current_module=full_path.parent.parent.name if "learning" in file_path else None
+        )
+    except Exception as e:
+        return render_template(
+            "error.html",
+            message=f"Error accessing file: {str(e)}",
+            modules=MODULES
+        ), 500
 
 @app.route("/run_script", methods=["POST"])
 def run_script():

@@ -1,8 +1,36 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="markdown-body">
-    <h1>{{ filename }}</h1>
-    <pre><code class="language-python">{{ content | e }}</code></pre>
-    <a href="{{ url_for('home') }}" class="text-blue-500 hover:underline">Back to Home</a>
+    <h1 class="text-2xl font-bold mb-4">{{ filename }}</h1>
+    {% if file_type == "markdown" %}
+        <div class="prose max-w-none">{{ content | safe }}</div>
+    {% else %}
+        <div class="code-container">
+            <pre><code class="{% if file_type == 'python' %}language-python{% endif %}">{{ content | e }}</code></pre>
+        </div>
+    {% endif %}
+    <a href="{{ url_for('home') }}" class="text-blue-500 hover:underline mt-4 inline-block">Back to Home</a>
+    {% if current_module %}
+        <a href="{{ url_for('module', module_name=current_module) }}" class="text-blue-500 hover:underline mt-4 ml-4 inline-block">Back to {{ current_module | capitalize }} Module</a>
+    {% endif %}
 </div>
+{% if file_type == "python" %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+<style>
+    .code-container pre {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        overflow-x: auto;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+    .code-container code {
+        color: #2d3748;
+    }
+</style>
+{% endif %}
 {% endblock %}

@@ -17,3 +17,5 @@ wheels/
 .idea/
 s
 help
+
+uv.lock

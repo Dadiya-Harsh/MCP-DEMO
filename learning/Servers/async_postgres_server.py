@@ -28,7 +28,7 @@ asyncio.set_event_loop(loop)
 # Database connection configuration
 DB_CONFIG = {
     "user": os.getenv("POSTGRES_USER", "postgres"),
-    "password": os.getenv("POSTGRES_PASSWORD", ""),
+    "password": os.getenv("POSTGRES_PASSWORD", "password"),
     "host": os.getenv("POSTGRES_HOST", "localhost"),
     "port": int(os.getenv("POSTGRES_PORT", 5432))
 }

@@ -348,7 +348,7 @@ async def main():
     default_servers = {
         "postgres": "http://localhost:8001/sse",
         "web_search": "http://localhost:8002/sse",
-        "file_manager": "http://localhost:8003/sse"
+        "file_manager": "http://localhost:8004/sse"
     }
 
     # Check for command line arguments or use defaults

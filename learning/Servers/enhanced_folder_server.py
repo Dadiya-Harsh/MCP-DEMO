@@ -920,4 +920,4 @@ def file_search_prompt() -> List[Dict]:
 if __name__ == "__main__":
     # Ensure the base path exists
     os.makedirs(ALLOWED_BASE_PATH, exist_ok=True)
-    mcp.run(transport="stdio")  # Use SSE transport for HTTP compatibility
+    mcp.run(transport="sse")  # Use SSE transport for HTTP compatibility
